@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASG PrettySite – Scalable on AWS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-content">
+      <h1>ASG PrettySite</h1>
+      <p class="tagline">A scalable, highly available web app running on AWS.</p>
+      <p class="subtext">
+        Auto Scaling Group • Load Balancer • Route 53 • Terraform
+      </p>
+      <a href="#architecture" class="btn-primary">See the Architecture</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="about">
+      <h2>What is this project?</h2>
+      <p>
+        This project shows that I can design and deploy a real, production-style
+        environment on AWS — not just a single EC2 instance. The app runs behind
+        a load balancer, scales with demand, and uses Route 53 for friendly DNS.
+      </p>
+    </section>
+
+    <section class="section features">
+      <h2>Key Features</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Auto Scaling Group</h3>
+          <p>EC2 instances launch and scale automatically based on demand.</p>
+        </div>
+        <div class="card">
+          <h3>Application Load Balancer</h3>
+          <p>Distributes traffic across healthy servers for availability.</p>
+        </div>
+        <div class="card">
+          <h3>Route 53 DNS</h3>
+          <p>Provides a clean domain name that maps to the ALB endpoint.</p>
+        </div>
+        <div class="card">
+          <h3>Terraform</h3>
+          <p>Infrastructure as code — easy to rebuild, update, and destroy.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <h2>High-Level Architecture</h2>
+      <ul class="arch-list">
+        <li>VPC with public/private subnets</li>
+        <li>Internet Gateway + NAT Gateway</li>
+        <li>Application Load Balancer</li>
+        <li>Auto Scaling Group with Launch Template</li>
+        <li>Route 53 A record alias → ALB</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Built by Tawan Perry • ASG PrettySite + Route 53 Demo</p>
+  </footer>
+</body>
+</html>
