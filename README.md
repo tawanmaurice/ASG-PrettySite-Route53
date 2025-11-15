@@ -1,63 +1,82 @@
+# ASG-PrettySite-Route53
 
- create mode 100644 terraform/.terraform.lock.hcl
- create mode 100644 terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/3.76.1/windows_amd64/terraform-provider-aws_v3.76.1_x5.exe    
- create mode 100644 terraform/0-auth.tf
- create mode 100644 terraform/1-vpc.tf
- create mode 100644 terraform/10-autoscalinggroup.tf
- create mode 100644 terraform/11-route53.tf
- create mode 100644 terraform/2-subnets.tf
- create mode 100644 terraform/3-igw.tf
- create mode 100644 terraform/4-nat.tf
- create mode 100644 terraform/5-route.tf
- create mode 100644 terraform/6-sg01-all.tf
- create mode 100644 terraform/7-launchtemplate.tf
- create mode 100644 terraform/8-targetgroup.tf
- create mode 100644 terraform/9-loadbalancer.tf
- create mode 100644 terraform/terraform.tfstate
- create mode 100644 terraform/terraform.tfstate.backup
- create mode 100644 terraform/terraform.tfvars
- create mode 100644 terraform/variables-route53.tf
+A small but powerful AWS project that proves I can build a **highly available web app with Terraform**, wire it up to a **custom domain**, and make it actually look good on the front end.
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$ cd ~/ASG-PrettySite-Route53
+The stack includes:
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$ ls
-index.html  style.css  terraform/
+- **VPC** with public + private subnets across multiple AZs  
+- **Internet Gateway + NAT Gateway**
+- **Application Load Balancer (ALB)**
+- **Auto Scaling Group (ASG)** with a Launch Template
+- **Route 53** alias record pointing a real domain to the ALB
+- A **pretty HTML/CSS landing page** that shows live EC2 metadata (private IP, AZ, VPC ID, etc.)
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$ git add .
+Live example (for this practice run):  
+`http://app.tawanperry.top` (domain managed through Porkbun + Route 53)
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$ git commit -m "Add Terraform ASG, ALB, Route53 infrastructure code"
-On branch main
-Your branch is ahead of 'origin/main' by 1 commit.
-  (use "git push" to publish your local commits)
+---
 
-nothing to commit, working tree clean
+## Architecture Overview
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$ git status
-git push origin main
-On branch main
-Your branch is ahead of 'origin/main' by 1 commit.
-  (use "git push" to publish your local commits)
+**Network**
 
-nothing to commit, working tree clean
-Enumerating objects: 29, done.
-Counting objects: 100% (29/29), done.
-Delta compression using up to 12 threads
-Compressing objects: 100% (22/22), done.
-Writing objects: 100% (28/28), 54.43 MiB | 2.09 MiB/s, done.
-Total 28 (delta 1), reused 0 (delta 0), pack-reused 0 (from 0)
-remote: Resolving deltas: 100% (1/1), done.
-remote: error: Trace: 90779489bb9fbdc53ddae52eea2d9c189cda2d81265771eac399885fe1945132
-remote: error: See https://gh.io/lfs for more information.
-remote: error: File terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/3.76.1/windows_amd64/terraform-provider-aws_v3.76.1_x5.exe is 247.48 MB; this exceeds GitHub's file size limit of 100.00 MB
-remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
-To https://github.com/tawanmaurice/ASG-PrettySite-Route53.git
- ! [remote rejected] main -> main (pre-receive hook declined)
-error: failed to push some refs to 'https://github.com/tawanmaurice/ASG-PrettySite-Route53.git'
+- One **VPC** in `us-east-1`
+- **Public subnets** in 3 AZs for:
+  - Application Load Balancer  
+  - NAT Gateway
+- **Private subnets** in 3 AZs for:
+  - EC2 instances managed by the Auto Scaling Group
+- **Internet Gateway** attached to the VPC
+- **NAT Gateway** in a public subnet so private instances can reach the internet for updates
 
-tawan@TP MINGW64 ~/ASG-PrettySite-Route53 (main)
-$
+**Compute & Load Balancing**
+
+- **Launch Template**:
+  - Amazon Linux 2023 (`t2.micro`)
+  - Installs **Apache (httpd)**
+  - Uses **IMDSv2** to pull EC2 metadata (IP, AZ, VPC ID, etc.)
+  - Generates a styled `index.html` under `/var/www/html/`
+
+- **Auto Scaling Group (ASG)**:
+  - Uses the Launch Template
+  - Spreads instances across multiple private subnets / AZs
+  - Desired capacity can be adjusted (e.g., 2 instances)
+
+- **Application Load Balancer (ALB)**:
+  - Placed in public subnets
+  - Listens on HTTP (port 80)
+  - Forwards traffic to a **Target Group** with the ASG instances
+  - Health checks to keep only healthy instances in rotation
+
+**DNS / Route 53**
+
+- **Public hosted zone** in Route 53 for the domain  
+- **Alias A record**:
+  - Name: `app.tawanperry.top`
+  - Target: ALB DNS name (alias, not a CNAME)
+- Registrar (Porkbun) delegates the domain to the Route 53 name servers.
+
+---
+
+## Repo Structure
+
+```text
+ASG-PrettySite-Route53/
+├── index.html          # Standalone version of the pretty HTML page
+├── style.css           # Standalone CSS file for the landing page
+└── terraform/
+    ├── 0-auth.tf
+    ├── 1-vpc.tf
+    ├── 2-subnets.tf
+    ├── 3-igw.tf
+    ├── 4-nat.tf
+    ├── 5-route.tf
+    ├── 6-sg01-all.tf
+    ├── 7-launchtemplate.tf
+    ├── 8-targetgroup.tf
+    ├── 9-loadbalancer.tf
+    ├── 10-autoscalinggroup.tf
+    ├── 11-route53.tf
+    ├── variables-route53.tf
+    ├── terraform.tfvars        # (gitignored or example in repo)
+    └── terraform.tfstate*      # (never committed)
